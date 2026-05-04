@@ -36,6 +36,16 @@ on:
         required: false
         default: ''
         type: string
+      rootfs_partsize:
+        description: 'RootFS partition size in MB'
+        required: true
+        default: '2048'
+        type: string
+      kernel_partsize:
+        description: 'Kernel partition size in MB'
+        required: true
+        default: '32'
+        type: string
       build_options:
         description: 'Build options (separate multiple options with spaces)'
         required: false
@@ -129,7 +139,11 @@ jobs:
         git_name: ${{ secrets.username }}
         git_password: ${{ secrets.password }}
       run: |
-        export ${{ github.event.inputs.build_options }} LAN=${{ github.event.inputs.lan_addr }} USE_GCC15=y
+        export ${{ github.event.inputs.build_options }} \
+          LAN=${{ github.event.inputs.lan_addr }} \
+          USE_GCC15=y \
+          ROOTFS_PARTSIZE=${{ github.event.inputs.rootfs_partsize }} \
+          KERNEL_PARTSIZE=${{ github.event.inputs.kernel_partsize }}
         [ ${{ github.event.inputs.ccache }} = 'true' ] && export ENABLE_CCACHE=y
         [ -n ${{ github.event.inputs.root_password }} ] && export ROOT_PASSWORD="${{ github.event.inputs.root_password }}"
         bash <(curl -sS http://127.0.0.1:8080/build.sh) ${{ env.build_version }} ${{ github.event.inputs.device }}
