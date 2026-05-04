@@ -430,6 +430,35 @@ if [ "$BUILD_FAST" = "y" ]; then
     find ./tmp/ -name '*' -exec touch {} \; >/dev/null 2>&1
 fi
 
+# custom partition size, unit: MB
+: "${KERNEL_PARTSIZE:=32}"
+: "${ROOTFS_PARTSIZE:=944}"
+
+if ! echo "$KERNEL_PARTSIZE" | grep -Eq '^[0-9]+$'; then
+    echo -e "${RED_COLOR}Invalid KERNEL_PARTSIZE: $KERNEL_PARTSIZE${RES}"
+    exit 1
+fi
+
+if ! echo "$ROOTFS_PARTSIZE" | grep -Eq '^[0-9]+$'; then
+    echo -e "${RED_COLOR}Invalid ROOTFS_PARTSIZE: $ROOTFS_PARTSIZE${RES}"
+    exit 1
+fi
+
+# remove old partition size configs to avoid duplicate entries
+sed -i '/^CONFIG_TARGET_KERNEL_PARTSIZE=/d' .config
+sed -i '/^CONFIG_TARGET_ROOTFS_PARTSIZE=/d' .config
+
+# apply custom partition size
+echo "CONFIG_TARGET_KERNEL_PARTSIZE=$KERNEL_PARTSIZE" >> .config
+echo "CONFIG_TARGET_ROOTFS_PARTSIZE=$ROOTFS_PARTSIZE" >> .config
+
+echo -e "${GREEN_COLOR}KERNEL_PARTSIZE:${RES} ${KERNEL_PARTSIZE} MB"
+echo -e "${GREEN_COLOR}ROOTFS_PARTSIZE:${RES} ${ROOTFS_PARTSIZE} MB"
+
+
+
+
+
 # init openwrt config
 rm -rf tmp/*
 if [ "$BUILD" = "n" ]; then
