@@ -29,7 +29,7 @@ on:
       lan_addr:
         description: 'Setting default LAN address'
         required: true
-        default: '10.0.0.1'
+        default: '192.168.0.252'
         type: string
       root_password:
         description: 'Setting default root password (Optional, No password by default)'
@@ -49,7 +49,7 @@ on:
       build_options:
         description: 'Build options (separate multiple options with spaces)'
         required: false
-        default: 'BUILD_FAST=y ENABLE_BPF=y ENABLE_LTO=y ENABLE_LRNG=y ENABLE_MOLD=y KERNEL_CLANG_LTO=y'
+        default: 'MINIMAL_BUILD=y BUILD_FAST=y ENABLE_BPF=y ENABLE_LRNG=y ENABLE_MOLD=y'
         type: string
 
 jobs:
