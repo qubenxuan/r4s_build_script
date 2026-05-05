@@ -99,6 +99,64 @@ jobs:
         echo "}" >> caddyfile
         sudo /usr/bin/caddy start --config caddyfile --adapter caddyfile
 
+    - name: Debug selected source and config
+      run: |
+        echo "========== GitHub Actions Inputs =========="
+        echo "GITHUB_SHA=$GITHUB_SHA"
+        echo "GITHUB_REF=$GITHUB_REF"
+        echo "DEVICE=${{ github.event.inputs.device }}"
+        echo "VERSION=${{ github.event.inputs.version }}"
+        echo "BUILD_VERSION=${{ env.build_version }}"
+        echo "BUILD_OPTIONS=${{ github.event.inputs.build_options }}"
+        echo "ROOTFS_PARTSIZE=${{ github.event.inputs.rootfs_partsize }}"
+        echo "KERNEL_PARTSIZE=${{ github.event.inputs.kernel_partsize }}"
+        echo "CCACHE=${{ github.event.inputs.ccache }}"
+
+        echo
+        echo "========== Checked out repository =========="
+        cd r4s_build_script
+        echo "PWD=$(pwd)"
+        git status --short || true
+        git branch --show-current || true
+        git rev-parse HEAD || true
+        git log -1 --oneline || true
+
+        echo
+        echo "========== Local tags =========="
+        echo "--- tags/v25 ---"
+        cat tags/v25 || true
+        echo
+        echo "--- tags/kernel-6.18 ---"
+        cat tags/kernel-6.18 || true
+
+        echo
+        echo "========== build.sh key mappings =========="
+        grep -n "openwrt-25.12\|tags/v25\|kernel-6.18\|nanopi-r76s\|rk3576\|mediatek\|filogic" openwrt/build.sh || true
+    
+        echo
+        echo "========== Local R76S config =========="
+        echo "--- openwrt/25-config-musl-r76s ---"
+        grep -n "CONFIG_TARGET" openwrt/25-config-musl-r76s || true
+
+        echo
+        echo "========== Local minimal IR config =========="
+        grep -n "CONFIG_KERNEL_IR_IMON_DECODER\|CONFIG_KERNEL_RC_DECODERS\|CONFIG_KERNEL_IR_.*DECODER" openwrt/25-config-minimal-common || true
+
+        cd ..
+
+        echo
+        echo "========== Caddy served files =========="
+        echo "--- served build.sh key mappings ---"
+        curl -sS http://127.0.0.1:8080/openwrt/build.sh | grep -n "openwrt-25.12\|tags/v25\|kernel-6.18\|nanopi-r76s\|rk3576\|mediatek\|filogic" || true
+
+        echo
+        echo "--- served R76S config ---"
+        curl -sS http://127.0.0.1:8080/openwrt/25-config-musl-r76s | grep "CONFIG_TARGET" || true
+
+        echo
+        echo "--- served minimal IR config ---"
+        curl -sS http://127.0.0.1:8080/openwrt/25-config-minimal-common | grep "CONFIG_KERNEL_IR_IMON_DECODER\|CONFIG_KERNEL_RC_DECODERS\|CONFIG_KERNEL_IR_.*DECODER" || true
+
     - name: Free disk space
       uses: sbwml/actions@free-disk
       with:
