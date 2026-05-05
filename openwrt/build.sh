@@ -296,6 +296,11 @@ rm -f 0*-*.sh 10-custom.sh
 rm -rf ../master
 
 # Load devices Config
+echo -e "${GREEN_COLOR}DEBUG MIRROR:${RES} $mirror"
+echo -e "${GREEN_COLOR}DEBUG BOARD:${RES} $2"
+echo -e "${GREEN_COLOR}DEBUG PLATFORM:${RES} $platform"
+echo -e "${GREEN_COLOR}DEBUG VERSION:${RES} $version"
+
 if [ "$platform" = "x86_64" ]; then
     curl -s $mirror/openwrt/25-config-musl-x86 > .config
 elif [ "$platform" = "rk3568" ]; then
@@ -465,6 +470,38 @@ if [ "$BUILD" = "n" ]; then
     exit 0
 else
     make defconfig
+fi
+
+echo -e "${GREEN_COLOR}Final target after defconfig:${RES}"
+grep -nE '^CONFIG_TARGET_|^CONFIG_TARGET_BOARD=|^CONFIG_TARGET_SUBTARGET=|^CONFIG_TARGET_PROFILE=' .config || true
+
+echo -e "${GREEN_COLOR}Final IR decoder config:${RES}"
+grep -n "CONFIG_KERNEL_IR_IMON_DECODER\|CONFIG_KERNEL_RC_DECODERS\|CONFIG_KERNEL_IR_.*DECODER" .config || true
+
+echo -e "${GREEN_COLOR}Final BPF/dev packages:${RES}"
+grep -n "CONFIG_PACKAGE_perf\|CONFIG_PACKAGE_kselftests-bpf\|CONFIG_PACKAGE_bpftool" .config || true
+
+if [ "$platform" = "rk3576" ]; then
+    if ! grep -q '^CONFIG_TARGET_rockchip=y' .config || \
+       ! grep -q '^CONFIG_TARGET_rockchip_armv8=y' .config || \
+       ! grep -q '^CONFIG_TARGET_rockchip_armv8_DEVICE_friendlyarm_nanopi-r76s=y' .config; then
+        echo -e "${RED_COLOR}ERROR: expected NanoPi R76S rockchip target, but final .config is:${RES}"
+        grep -nE '^CONFIG_TARGET_|^CONFIG_TARGET_BOARD=|^CONFIG_TARGET_SUBTARGET=|^CONFIG_TARGET_PROFILE=' .config || true
+        exit 1
+    fi
+fi
+
+if [ "$DEBUG_LINUX" = "true" ] || [ "$DEBUG_LINUX" = "y" ]; then
+    echo -e "${YELLOW_COLOR}DEBUG_LINUX enabled. Only compiling target/linux with verbose output.${RES}"
+
+    echo -e "${GREEN_COLOR}Check whether source contains NanoPi R76S target:${RES}"
+    grep -RIn "friendlyarm_nanopi-r76s\|nanopi-r76s\|rk3576" target/linux/rockchip 2>/dev/null || true
+
+    echo -e "${GREEN_COLOR}Running target/linux verbose build...${RES}"
+    make -j1 V=s target/linux/compile
+
+    echo -e "${GREEN_COLOR}target/linux debug build finished.${RES}"
+    exit 0
 fi
 
 # Compile
